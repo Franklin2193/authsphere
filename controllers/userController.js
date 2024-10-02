@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const pool = require('../config/db');
 
 
 exports.registerUser = async (req, res) => {
@@ -36,10 +37,28 @@ exports.login = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.findAll();
-    console.log(users);
-    const usersWithoutPasswords = users.map(({ password, ...user }) => user); // Excluye el campo password
-    res.json(usersWithoutPasswords); // Envía la respuesta sin las contraseñas
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Obtén todos los usuarios
+    const users = await User.findAll(limit, offset);
+    const usersWithoutPasswords = users.map(({ password, ...user }) => user); 
+
+    // Obtiene el total de usuarios
+    const totalUsersResult = await pool.query('SELECT COUNT(*) FROM users');
+
+    // Verifica si hay resultados en totalUsersResult
+    const totalUsers = totalUsersResult.rows.length > 0 ? parseInt(totalUsersResult.rows[0].count) : 0;
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    // Responde con la información de los usuarios
+    res.json({
+      users: usersWithoutPasswords,
+      currentPage: page,
+      totalPages: totalPages,
+      totalUsers: totalUsers,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al obtener los usuarios' });

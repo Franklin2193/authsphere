@@ -7,7 +7,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use('/api/users', userRoutes);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // Cambiar el puerto en caso de ser necesario
 
 app.listen(PORT, () => {
   console.log(`API Authsphere esta corriendo en el puerto ${PORT}`);
